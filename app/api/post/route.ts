@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prismadb } from '@/lib/db';
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { verifyJwt } from "@/lib/jwt";
+import { getSession } from "next-auth/client"
 
 export const GET =async (req:Request, res: Response) => {
     try{
@@ -16,7 +16,20 @@ export const GET =async (req:Request, res: Response) => {
 };
 
 export const POST = async (req: Request, res: Response) => {
-    // const session = await getServerSession(authOptions)
+  const accessToken = req.headers.get("authorization");
+  console.log(res.headers)
+    if (!accessToken || !verifyJwt(accessToken)) {
+        return new Response(
+        JSON.stringify({
+            error: "unauthorized",
+        }),
+        {
+            status: 401,
+        }
+        );
+    }
+    const session = await getSession({ req })
+    console.log(session)
     try{
         const body = await req.json();
         const { title, content, published } = body;
@@ -26,7 +39,7 @@ export const POST = async (req: Request, res: Response) => {
             title,
             content, 
             published,
-            authorId: '452a7b1f-e1b2-4b3a-9655-5a87decec886'
+            authorId: '95441eda-29c3-43a5-8300-f28d10dee79b'
            }
         })
         return NextResponse.json({ message: 'post created', post}, {status: 201})
